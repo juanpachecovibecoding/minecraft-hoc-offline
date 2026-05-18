@@ -57,11 +57,31 @@ function proxyToCodeOrg(req, res, reqPath) {
     hostname: 'studio.code.org',
     path: reqPath,
     method: req.method,
-    headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': '*/*' },
+    headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': '*/*', 'Accept-Encoding': 'identity' },
   };
   const proxyReq = https.request(options, (proxyRes) => {
-    res.writeHead(proxyRes.statusCode, proxyRes.headers);
-    proxyRes.pipe(res);
+    const chunks = [];
+    proxyRes.on('data', c => chunks.push(c));
+    proxyRes.on('end', () => {
+      const body = Buffer.concat(chunks);
+      // Auto-cache: save to site/ for future offline use
+      if (proxyRes.statusCode === 200 && req.method === 'GET') {
+        const ext = path.extname(reqPath.split('?')[0]).toLowerCase();
+        const cacheableExts = ['.js','.css','.png','.jpg','.jpeg','.gif','.svg',
+                               '.ico','.woff','.woff2','.ttf','.mp3','.ogg','.wav',
+                               '.mp4','.webm','.webp','.json'];
+        if (cacheableExts.includes(ext)) {
+          const localPath = path.join(SITE_DIR, reqPath.split('?')[0]);
+          try {
+            fs.mkdirSync(path.dirname(localPath), { recursive: true });
+            fs.writeFileSync(localPath, body);
+            console.log(`  💾 cached: ${reqPath.split('?')[0]}`);
+          } catch(e) { /* ignore write errors */ }
+        }
+      }
+      res.writeHead(proxyRes.statusCode, proxyRes.headers);
+      res.end(body);
+    });
   });
   proxyReq.on('error', () => {
     res.writeHead(502);
