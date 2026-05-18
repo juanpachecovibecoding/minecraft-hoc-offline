@@ -1,0 +1,11 @@
+# Node
+node_modules/
+npm-debug.log*
+
+# Assets descargados temporalmente (opcional, ver README)
+assets-download/
+
+# OS
+.DS_Store
+Thumbs.db
+*.log

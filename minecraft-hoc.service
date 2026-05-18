@@ -1,0 +1,24 @@
+# minecraft-hoc.service
+# Copiar a: /etc/systemd/system/minecraft-hoc.service
+# Luego:
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable minecraft-hoc
+#   sudo systemctl start minecraft-hoc
+
+[Unit]
+Description=Minecraft Hour of Code - Servidor Offline
+After=network.target
+
+[Service]
+Type=simple
+# ⚠️  Cambia estas dos líneas por tu usuario y ruta real:
+User=playcode
+WorkingDirectory=/home/playcode/minecraft-hoc-offline
+
+ExecStart=/usr/bin/node server.js 3000
+Restart=on-failure
+RestartSec=5
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target
